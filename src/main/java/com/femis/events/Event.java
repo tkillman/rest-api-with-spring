@@ -2,6 +2,13 @@ package com.femis.events;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
+import org.hibernate.annotations.Entity;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -15,7 +22,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(of = {"id","name"})
+@Entity
 public class Event {
+	@Id @GeneratedValue
 	private int id;
 	private String name;
 	private String description;
@@ -31,5 +40,8 @@ public class Event {
 	private int basePrice;
 	private int maxPrice;
 	private int limitOfEnrollment;
+	
+	@Enumerated(EnumType.STRING)
+	private EventsStatus evetnStatus;
 
 }
