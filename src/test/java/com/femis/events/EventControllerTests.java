@@ -2,9 +2,11 @@ package com.femis.events;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.http.HttpHeaders;
 import java.time.LocalDateTime;
 
 import org.junit.Test;
@@ -58,7 +60,9 @@ public class EventControllerTests {
 							.accept(MediaTypes.HAL_JSON)
 							.content(objectMapper.writeValueAsString(event)))
 							.andDo(print()).andExpect(status().isCreated())
-							.andExpect(jsonPath("id").exists());
+							.andExpect(jsonPath("id").exists())
+							.andExpect(header().exists(org.springframework.http.HttpHeaders.LOCATION))
+							.andExpect(header().string("Content-Type",MediaTypes.HAL_JSON_UTF8_VALUE));
 	}
 	
 	
