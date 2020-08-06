@@ -28,5 +28,8 @@ public class Event {
 	
 	private boolean offline;
 	private boolean free;
+	private int basePrice;
+	private int maxPrice;
+	private int limitOfEnrollment;
 
 }
