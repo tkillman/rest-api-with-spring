@@ -62,6 +62,7 @@ public class EventControllerTests {
 		
 		//Mockito.when(EventRepository.save(event)).thenReturn(event);
 		
+		 //장소(location)가 있으면 오프라인여부(offLine) 은 false_
 		mockMvc.perform(post("/api/events/")
 							.contentType(MediaType.APPLICATION_JSON_UTF8)
 							.accept(MediaTypes.HAL_JSON)
@@ -71,8 +72,12 @@ public class EventControllerTests {
 							.andExpect(header().exists(org.springframework.http.HttpHeaders.LOCATION))
 							.andExpect(header().string("Content-Type",MediaTypes.HAL_JSON_UTF8_VALUE))
 							.andExpect(jsonPath("id").value(Matchers.not(100)))
-							.andExpect(jsonPath("free").value(Matchers.is(false)))
-							.andExpect(jsonPath("eventsStatus").value(EventsStatus.DRAFT.name()));
+							.andExpect(jsonPath("free").value(false))
+							.andExpect(jsonPath("offLine").value(false))
+							.andExpect(jsonPath("eventsStatus").value(EventsStatus.DRAFT.name()))
+							.andExpect(jsonPath("_links.self").exists())
+							.andExpect(jsonPath("_links.query-events").exists())
+							.andExpect(jsonPath("_links.update-event").exists());
 	}
 	
 	@Test
@@ -118,7 +123,7 @@ public class EventControllerTests {
 	@Test
 	@TestAnnotation("입력값이 잘못된 경우 에러가 발생하는 테스트")
 	public void createEvent_Bad_Request_Wrong_Input() throws JsonProcessingException, Exception {
-		
+		System.out.println("createEvent_Bad_Request_Wrong_Input()");
 		//이상한 값, 끝나는 날짜가 시작 날짜보다 더 빠르고, 기본금액이 최대 금액보다 크다.
 		EventDto eventDto = EventDto.builder()
 				.name("Spring")
