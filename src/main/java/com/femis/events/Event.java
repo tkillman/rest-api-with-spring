@@ -2,12 +2,13 @@ package com.femis.events;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
-
-import org.hibernate.annotations.Entity;
+import javax.persistence.SequenceGenerator;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,11 +22,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-@EqualsAndHashCode(of = {"id","name"})
+@EqualsAndHashCode(of = "id")
 @Entity
 public class Event {
-	@Id @GeneratedValue
+	
+	@Id
+    @GeneratedValue(generator = "Entity_Sequence", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "Entity_Sequence", sequenceName = "Entity_Seq")
 	private int id;
+	
 	private String name;
 	private String description;
 	private LocalDateTime beginEnrollmentDateTime;
@@ -35,13 +40,13 @@ public class Event {
 	private String location; // (optional) 이게 없으면 온라인 모임 private int basePrice; // (optional) private int
 								// maxPrice; // (optional) private int limitOfEnrollment;
 	
-	private boolean offline;
+	private boolean offLine;
 	private boolean free;
 	private int basePrice;
 	private int maxPrice;
 	private int limitOfEnrollment;
 	
 	@Enumerated(EnumType.STRING)
-	private EventsStatus evetnStatus;
+	private EventsStatus eventsStatus = EventsStatus.DRAFT;
 
 }
