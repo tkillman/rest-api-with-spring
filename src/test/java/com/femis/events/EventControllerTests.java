@@ -116,6 +116,7 @@ public class EventControllerTests {
 	}
 
 	@Test
+	@TestAnnotation("입력값이 잘못된 경우 에러가 발생하는 테스트")
 	public void createEvent_Bad_Request_Wrong_Input() throws JsonProcessingException, Exception {
 		
 		//이상한 값, 끝나는 날짜가 시작 날짜보다 더 빠르고, 기본금액이 최대 금액보다 크다.
@@ -135,7 +136,14 @@ public class EventControllerTests {
 		mockMvc.perform(post("/api/events/")
 				.contentType(MediaType.APPLICATION_JSON_UTF8)
 				.content(objectMapper.writeValueAsString(eventDto)))
-		.andExpect(status().isBadRequest());
+		.andDo(print())
+		.andExpect(status().isBadRequest())
+		.andExpect(jsonPath("$[0].objectName").exists())
+		//.andExpect(jsonPath("$[0].field").exists())
+		.andExpect(jsonPath("$[0].defaultMessage").exists())
+		.andExpect(jsonPath("$[0].code").exists())
+		//.andExpect(jsonPath("$[0].rejectedValue").exists())
+		;
 		
 	}
 
