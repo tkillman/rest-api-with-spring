@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.femis.common.TestAnnotation;
 
 import org.hamcrest.Matchers;
 
@@ -42,6 +43,7 @@ public class EventControllerTests {
 	
 	// api.json api.xml
 	@Test
+	@TestAnnotation("정상적으로 이벤트를 생성하는 테스트")
 	public void createEvent() throws Exception{
 
 		EventDto eventDto = EventDto.builder()
@@ -112,5 +114,29 @@ public class EventControllerTests {
 		.andExpect(status().isBadRequest());
 		
 	}
-	
+
+	@Test
+	public void createEvent_Bad_Request_Wrong_Input() throws JsonProcessingException, Exception {
+		
+		//이상한 값, 끝나는 날짜가 시작 날짜보다 더 빠르고, 기본금액이 최대 금액보다 크다.
+		EventDto eventDto = EventDto.builder()
+				.name("Spring")
+				.description("REST API Development with Spring")
+				.beginEnrollmentDateTime(LocalDateTime.of(2018, 11, 23, 14, 21))
+				.closeEnrollmentDateTime(LocalDateTime.of(2018, 11, 24, 14, 21))
+				.beginEventDateTime(LocalDateTime.of(2018, 11, 24, 14, 21))
+				.endEventDateTime(LocalDateTime.of(2018, 11, 23, 14, 21))
+				.basePrice(10000)
+				.maxPrice(100)
+				.limitOfEnrollment(100)
+				.location("강남역 D2 스타텁 팩토리")
+				.build();
+
+		mockMvc.perform(post("/api/events/")
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.content(objectMapper.writeValueAsString(eventDto)))
+		.andExpect(status().isBadRequest());
+		
+	}
+
 }
