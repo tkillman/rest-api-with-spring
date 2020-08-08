@@ -34,17 +34,18 @@ public class EventController {
 
 	@PostMapping
 	public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors) {
-		
+		//필수 유효성 검사
 		if (errors.hasErrors()) {
 			return ResponseEntity.badRequest().body(errors);
+			//return badRequest(errors);
 		}
 		
 		eventValidator.validate(eventDto, errors);
-		
+		//입력값 유효성 검사
 		if (errors.hasErrors()) {
-			return ResponseEntity.badRequest().body(errors);
+			//return ResponseEntity.badRequest().body(errors);
+			return badRequest(errors);
 		}
-		
 		
 		Event event = modelMapper.map(eventDto, Event.class);
 		event.update();
@@ -58,5 +59,11 @@ public class EventController {
 		eventResource.add(selfLinkBuilder.withRel("update-event"));
 		
 		return ResponseEntity.created(createdUri).body(eventResource);
+	}
+	
+	private ResponseEntity badRequest(Errors errors) {
+		System.out.println("ResponseEntity.badRequest().body(new ErrorsResource(errors))");
+		System.out.println(ResponseEntity.badRequest().body(new ErrorsResource(errors)));
+		return ResponseEntity.badRequest().body(new ErrorsResource(errors));
 	}
 }

@@ -51,8 +51,6 @@ public class ErrorsSerializer extends JsonSerializer<Errors>{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			
-			
 		});
 		gen.writeEndArray();
 	}
