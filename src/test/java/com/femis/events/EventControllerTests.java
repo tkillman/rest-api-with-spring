@@ -1,15 +1,20 @@
 package com.femis.events;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,9 +26,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.femis.common.BaseControllerTest;
 import com.femis.common.TestAnnotation;
-
-import org.hamcrest.Matchers;
 
 
 //@WebMvcTest
@@ -32,13 +36,16 @@ import org.hamcrest.Matchers;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class EventControllerTests {
-	
-	@Autowired
-	MockMvc mockMvc;
+public class EventControllerTests extends BaseControllerTest{
 	
 	@Autowired
 	ObjectMapper objectMapper;
+
+	@Autowired
+	EventRepository eventRepository;
+	
+	@Autowired
+	ModelMapper modelMapper;
 	
 	//@MockBean
 	//EventRepository EventRepository;
@@ -65,7 +72,7 @@ public class EventControllerTests {
 		//Mockito.when(EventRepository.save(event)).thenReturn(event);
 		
 		 //장소(location)가 있으면 오프라인여부(offLine) 은 false_
-		mockMvc.perform(post("/api/events/")
+		this.mockMvc.perform(post("/api/events/")
 							.contentType(MediaType.APPLICATION_JSON_UTF8)
 							.accept(MediaTypes.HAL_JSON)
 							.content(objectMapper.writeValueAsString(eventDto)))
@@ -156,6 +163,133 @@ public class EventControllerTests {
 		.andExpect(jsonPath("_links.index").exists())
 		;
 		
+	}
+	
+	public Event generateEvent(int i) throws Exception{
+
+		Event event = Event.builder()
+							.name("event generate i " + i)
+							.description("REST API Development with Spring")
+							.beginEnrollmentDateTime(LocalDateTime.of(2018, 11, 23, 14, 21))
+							.closeEnrollmentDateTime(LocalDateTime.of(2018, 11, 24, 14, 21))
+							.beginEventDateTime(LocalDateTime.of(2018, 11, 24, 14, 21))
+							.endEventDateTime(LocalDateTime.of(2018, 11, 24, 14, 21))
+							.basePrice(100)
+							.maxPrice(100)
+							.limitOfEnrollment(100)
+							.location("강남역 D2 스타텁 팩토리")
+							.build();	
+		return this.eventRepository.save(event);
+	}
+
+	@Test
+	@TestAnnotation("목록 조회를 테스트한다.")
+	public void selectEventsListTest() throws Exception {
+		
+		//준비
+		IntStream.range(0, 30).forEach(i -> {
+			try {
+				this.generateEvent(i);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		
+		//실행
+		mockMvc.perform(get("/api/events/")
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.accept(MediaTypes.HAL_JSON)
+				.param("page", "1")
+				.param("size", "10")
+				.param("sort", "name,DESC"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("page").exists())
+				.andExpect(jsonPath("_embedded.eventResourceList[0]._links.self").exists())
+				.andExpect(jsonPath("_links.self").exists())
+				//.andExpect(jsonPath("_links.profile").exists())
+				//.andDo(document("query-events"))
+				;
+	}
+	
+	@Test
+	@TestAnnotation("단일 조회를 테스트한다. 없는 건을 조회한다면 실패")
+	public void selectEventTest_Bad_Request() throws Exception {
+		
+		//실행
+		mockMvc.perform(get("/api/events/2885844"))
+				.andExpect(status().isBadRequest())
+				;
+		//단언
+	}
+	
+	@Test
+	@TestAnnotation("단일 조회를 테스트한다.성공")
+	public void selectEventTest_Success() throws Exception {
+		//준비
+		Event event = this.generateEvent(100);
+		
+		//실행
+		mockMvc.perform(get("/api/events/" + event.getId()))
+				.andExpect(status().isOk())
+				;
+		//단언
+	}
+	
+	@Test
+	@TestAnnotation("이벤트 수정을 테스트한다. 필수값 누락체크")
+	public void updateEventTest_Bad_Request() throws Exception {
+		//준비
+		Event event = this.generateEvent(1);
+		EventDto eventDto = this.modelMapper.map(event, EventDto.class);
+		eventDto.setName(null);
+		
+		//실행
+		mockMvc.perform(put("/api/events/" + event.getId())
+						.contentType(MediaType.APPLICATION_JSON_UTF8)
+						.content(objectMapper.writeValueAsBytes(eventDto)))
+				.andExpect(status().isBadRequest())
+				;
+		//단언
+	}
+	
+	@Test
+	@TestAnnotation("이벤트 수정을 테스트한다. 비즈니스로직 체크")
+	public void updateEventTest_Bad_Request2() throws Exception {
+		//준비
+		Event event = this.generateEvent(1);
+		EventDto eventDto = this.modelMapper.map(event, EventDto.class);
+		eventDto.setBasePrice(1000);
+		eventDto.setMaxPrice(100);
+		
+		//실행
+		mockMvc.perform(put("/api/events/" + event.getId())
+						.contentType(MediaType.APPLICATION_JSON_UTF8)
+						.content(objectMapper.writeValueAsBytes(eventDto)))
+				.andExpect(status().isBadRequest())
+				;
+		//단언
+	}
+	
+	@Test
+	@TestAnnotation("이벤트 수정을 테스트한다. 성공")
+	public void updateEventTest() throws Exception {
+		//준비
+		Event event = this.generateEvent(1);
+		EventDto eventDto = this.modelMapper.map(event, EventDto.class);
+		
+		String updateName = "currentTime" + LocalDateTime.now();
+		eventDto.setName(updateName);
+		
+		//실행
+		mockMvc.perform(put("/api/events/" + event.getId())
+						.contentType(MediaType.APPLICATION_JSON_UTF8)
+						.content(objectMapper.writeValueAsBytes(eventDto)))
+				.andExpect(status().isOk())
+				.andDo(print())
+				.andExpect(jsonPath("name",Matchers.is(updateName)))
+				;
+		//단언
 	}
 
 }
