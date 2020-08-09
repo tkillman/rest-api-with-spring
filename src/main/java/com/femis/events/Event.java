@@ -8,7 +8,10 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
+
+import com.femis.account.Account;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,6 +52,9 @@ public class Event {
 	@Enumerated(EnumType.STRING)
 	private EventsStatus eventsStatus = EventsStatus.DRAFT;
 
+	@ManyToOne
+	private Account manager;
+	
 	public void update() {
 		// Update free
 		if(this.basePrice == 0 && this.maxPrice == 0) {
