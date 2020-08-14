@@ -27,8 +27,8 @@ public class AuthServerConfigTest extends BaseControllerTest{
 	@TestAnnotation("인증 토큰을 발급받는 테스트")
 	public void getAuthToken() throws Exception{
 		//Given
-		String username = "keesun@email.com";
-		String password = "keesun";
+		String username = "admin@email.com";
+		String password = "admin";
 		
 		Account keesun = Account.builder()
 				.email(username)
@@ -36,7 +36,7 @@ public class AuthServerConfigTest extends BaseControllerTest{
 				.roles(new HashSet<>(Arrays.asList(AccountRole.ADMIN, AccountRole.USER)))
 				.build();
 		
-		this.accountService.saveAccount(keesun);
+		//this.accountService.saveAccount(keesun);
 				
 		String clientId = "myApp";
 		String clientSecret = "pass";
