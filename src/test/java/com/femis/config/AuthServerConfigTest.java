@@ -36,6 +36,7 @@ public class AuthServerConfigTest extends BaseControllerTest{
 				.roles(new HashSet<>(Arrays.asList(AccountRole.ADMIN, AccountRole.USER)))
 				.build();
 		
+		this.accountService.saveAccount(keesun);
 				
 		String clientId = "myApp";
 		String clientSecret = "pass";

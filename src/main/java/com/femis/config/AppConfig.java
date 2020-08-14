@@ -14,14 +14,22 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.femis.account.Account;
+import com.femis.account.AccountRepository;
 import com.femis.account.AccountRole;
 import com.femis.account.AccountService;
+import com.femis.common.AppProperties;
 
 @Configuration
 public class AppConfig {
 	
 	@Autowired
 	AccountService accountService;
+	
+	@Autowired
+	AccountRepository accountRepository;
+	
+	@Autowired
+	AppProperties appProperties;
 	
 	@Bean
 	public ModelMapper modelMapper() {
@@ -39,6 +47,8 @@ public class AppConfig {
 			
 			@Override
 			public void run(ApplicationArguments args) throws Exception {
+				accountRepository.deleteAll();
+				
 				Account keesun = Account.builder()
 						.email("keesun@email.com")
 						.password("keesun")
@@ -46,6 +56,22 @@ public class AppConfig {
 						.build();
 				
 				accountService.saveAccount(keesun);
+				
+				Account admin = Account.builder()
+						.email(appProperties.getAdminUsername())
+						.password(appProperties.getAdminPassword())
+						.roles(new HashSet<>(Arrays.asList(AccountRole.ADMIN, AccountRole.USER)))
+						.build();
+				
+				accountService.saveAccount(admin);
+				
+				Account user = Account.builder()
+						.email(appProperties.getUserUsername())
+						.password(appProperties.getUserPassword())
+						.roles(new HashSet<>(Arrays.asList(AccountRole.ADMIN, AccountRole.USER)))
+						.build();
+				
+				accountService.saveAccount(user);
 			}
 		};
 	}

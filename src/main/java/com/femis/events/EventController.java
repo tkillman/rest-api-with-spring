@@ -15,6 +15,9 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +45,8 @@ public class EventController {
 
 	@PostMapping
 	public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
 		//필수 유효성 검사
 		if (errors.hasErrors()) {
 			return ResponseEntity.badRequest().body(errors);

@@ -1,5 +1,6 @@
 package com.femis.events;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -8,7 +9,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.stream.IntStream;
 
 import org.hamcrest.Matchers;
@@ -19,13 +23,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.common.util.Jackson2JsonParser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.femis.account.Account;
+import com.femis.account.AccountRole;
+import com.femis.account.AccountService;
 import com.femis.common.BaseControllerTest;
 import com.femis.common.TestAnnotation;
 
@@ -46,6 +56,9 @@ public class EventControllerTests extends BaseControllerTest{
 	
 	@Autowired
 	ModelMapper modelMapper;
+	
+	@Autowired
+	AccountService accountService;
 	
 	//@MockBean
 	//EventRepository EventRepository;
@@ -73,6 +86,7 @@ public class EventControllerTests extends BaseControllerTest{
 		
 		 //장소(location)가 있으면 오프라인여부(offLine) 은 false_
 		this.mockMvc.perform(post("/api/events/")
+							.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 							.contentType(MediaType.APPLICATION_JSON_UTF8)
 							.accept(MediaTypes.HAL_JSON)
 							.content(objectMapper.writeValueAsString(eventDto)))
@@ -113,6 +127,7 @@ public class EventControllerTests extends BaseControllerTest{
 		//Mockito.when(EventRepository.save(event)).thenReturn(event);
 		
 		mockMvc.perform(post("/api/events/")
+							.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 							.contentType(MediaType.APPLICATION_JSON_UTF8)
 							.accept(MediaTypes.HAL_JSON)
 							.content(objectMapper.writeValueAsString(event)))
@@ -126,10 +141,10 @@ public class EventControllerTests extends BaseControllerTest{
 	public void createEvent_Bad_Request_Empty_Input() throws JsonProcessingException, Exception {
 		EventDto eventDto = EventDto.builder().build();
 		mockMvc.perform(post("/api/events/")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 				.contentType(MediaType.APPLICATION_JSON_UTF8)
 				.content(objectMapper.writeValueAsString(eventDto)))
 		.andExpect(status().isBadRequest());
-		
 	}
 
 	@Test
@@ -151,6 +166,7 @@ public class EventControllerTests extends BaseControllerTest{
 				.build();
 
 		mockMvc.perform(post("/api/events/")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 				.contentType(MediaType.APPLICATION_JSON_UTF8)
 				.content(objectMapper.writeValueAsString(eventDto)))
 		.andDo(print())
@@ -211,6 +227,38 @@ public class EventControllerTests extends BaseControllerTest{
 				//.andDo(document("query-events"))
 				;
 	}
+
+	@Test
+	@TestAnnotation("목록 조회를 테스트한다. 인증정보를 가지고")
+	public void selectEventsListTestWithAuthentication() throws Exception {
+		
+		//준비
+		IntStream.range(0, 30).forEach(i -> {
+			try {
+				this.generateEvent(i);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		
+		//실행
+		mockMvc.perform(get("/api/events/")
+				.header(HttpHeaders.AUTHORIZATION, getBearerToken())
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.accept(MediaTypes.HAL_JSON)
+				.param("page", "1")
+				.param("size", "10")
+				.param("sort", "name,DESC"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("page").exists())
+				.andExpect(jsonPath("_embedded.eventResourceList[0]._links.self").exists())
+				.andExpect(jsonPath("_links.self").exists())
+				//.andExpect(jsonPath("_links.profile").exists())
+				//.andDo(document("query-events"))
+				;
+	}
+
 	
 	@Test
 	@TestAnnotation("단일 조회를 테스트한다. 없는 건을 조회한다면 실패")
@@ -246,11 +294,16 @@ public class EventControllerTests extends BaseControllerTest{
 		
 		//실행
 		mockMvc.perform(put("/api/events/" + event.getId())
+						.header(HttpHeaders.AUTHORIZATION, getBearerToken())
 						.contentType(MediaType.APPLICATION_JSON_UTF8)
 						.content(objectMapper.writeValueAsBytes(eventDto)))
 				.andExpect(status().isBadRequest())
 				;
 		//단언
+	}
+	
+	public String getBearerToken() throws UnsupportedEncodingException, Exception {
+		return "Bearer " + getAccessToken();
 	}
 	
 	@Test
@@ -264,6 +317,7 @@ public class EventControllerTests extends BaseControllerTest{
 		
 		//실행
 		mockMvc.perform(put("/api/events/" + event.getId())
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 						.contentType(MediaType.APPLICATION_JSON_UTF8)
 						.content(objectMapper.writeValueAsBytes(eventDto)))
 				.andExpect(status().isBadRequest())
@@ -283,6 +337,7 @@ public class EventControllerTests extends BaseControllerTest{
 		
 		//실행
 		mockMvc.perform(put("/api/events/" + event.getId())
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
 						.contentType(MediaType.APPLICATION_JSON_UTF8)
 						.content(objectMapper.writeValueAsBytes(eventDto)))
 				.andExpect(status().isOk())
@@ -292,4 +347,32 @@ public class EventControllerTests extends BaseControllerTest{
 		//단언
 	}
 
+	public String getAccessToken() throws UnsupportedEncodingException, Exception {
+		//Given
+				String username = "keesun@email.com";
+				String password = "keesun";
+				
+				Account keesun = Account.builder()
+						.email(username)
+						.password(password)
+						.roles(new HashSet<>(Arrays.asList(AccountRole.ADMIN, AccountRole.USER)))
+						.build();
+				
+				//this.accountService.saveAccount(keesun);
+						
+				String clientId = "myApp";
+				String clientSecret = "pass";
+
+				String responseBody = this.mockMvc.perform(post("/oauth/token")
+										.with(httpBasic(clientId, clientSecret))
+										.param("username", username)
+										.param("password", password)
+										.param("grant_type", "password")
+								)
+							.andReturn().getResponse().getContentAsString();
+			Jackson2JsonParser parser = new Jackson2JsonParser();
+			
+			System.out.println("responseBody :: " + responseBody );
+			return parser.parseMap(responseBody).get("access_token").toString();
+	}
 }
