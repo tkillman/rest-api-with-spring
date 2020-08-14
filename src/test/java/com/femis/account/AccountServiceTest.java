@@ -1,5 +1,6 @@
 package com.femis.account;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 import java.util.HashSet;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -23,9 +25,9 @@ public class AccountServiceTest {
 
 	@Autowired
 	AccountService accountService;
-	
+
 	@Autowired
-	AccountRepository accountRepository;
+	PasswordEncoder passwordEncoder;
 	
 	@Test
 	public void findByUsername() {
@@ -42,12 +44,14 @@ public class AccountServiceTest {
 								.roles(roleSet)
 								.build();
 		
-		this.accountRepository.save(account);
+		this.accountService.saveAccount(account);
 		
 		UserDetailsService userDetailsService = (UserDetailsService)accountService;
 		UserDetails userdetails = userDetailsService.loadUserByUsername(email);
 				
-		assertThat(userdetails.getPassword(), Matchers.equalTo(password));
+		//assertThat(userdetails.getPassword(), Matchers.equalTo(password));
+		
+		assertThat(this.passwordEncoder.matches(password, userdetails.getPassword())).isTrue();
 	}
 
 	@Test(expected = UsernameNotFoundException.class)
