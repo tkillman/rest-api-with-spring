@@ -11,6 +11,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
@@ -70,6 +71,7 @@ public class EventController {
 		eventResource.add(linkTo(EventController.class).withRel("query-events"));
 		//eventResource.add(selfLinkBuilder.withSelfRel());
 		eventResource.add(selfLinkBuilder.withRel("update-event"));
+		eventResource.add(new Link("/docs/index.html#resources-events-create","profile"));
 		
 		return ResponseEntity.created(createdUri).body(eventResource);
 	}
